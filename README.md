@@ -186,13 +186,22 @@ python .\src\factor_return_test.py
 python .\src\factor_neutralize.py
 python .\src\backtest.py
 python .\src\walk_forward.py
+python .\src\report.py
 ```
 
 滚动重训练验证：
 
 ```powershell
 python .\src\rolling_update.py
+python .\src\report.py
 ```
+
+报告生成：
+
+- `report.py` 会读取最新 `facts/runs/<run_id>/`，自动生成 HTML 和 PDF 分析报告。
+- 报告包含研究结论文本、因子文字说明、少量公式、IC 检验、Beta 控制单因子收益检验、静态回测和 Walk-Forward 结果。
+- 如本次 run 没有 `rolling_update/` 产物，报告会保留该章节并注明缺失。
+- PDF 导出调用本机 Chrome/Edge headless；在受限沙箱中运行时，可能需要允许 Chrome 子进程执行。
 
 结果默认保存到：
 
@@ -228,6 +237,7 @@ MSGNet因子挖掘/
 │   ├── backtest.py             # 静态组合回测
 │   ├── walk_forward.py         # 静态 Walk-Forward
 │   ├── rolling_update.py       # 滚动重训练 Walk-Forward
+│   ├── report.py               # 自动生成 HTML/PDF 分析报告
 │   ├── run_config.py           # 统一结果目录管理
 │   └── start_run.py            # 手动创建新运行目录
 ├── facts/runs/<run_id>/        # 运行结果，不纳入 Git
