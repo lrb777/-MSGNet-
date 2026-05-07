@@ -267,6 +267,40 @@ def rolling_section(run_dir: Path) -> tuple[str, str]:
     return body, ""
 
 
+def hedged_long_section(run_dir: Path) -> tuple[str, str]:
+    hedged_dir = run_dir / "hedged_long"
+    perf = prepare_perf(read_csv(hedged_dir / "perf_report.csv"))
+    if perf.empty:
+        return (
+            '<p class="muted">本次 run 未包含 ETF 多头+指数对冲产物。'
+            '如需生成该章节，请运行 <code>python .\\src\\hedged_long_backtest.py</code> 后重新生成报告。</p>',
+            "未生成",
+        )
+
+    test = perf[perf.get("区间类型", "") == "测试集"].copy()
+    summary = "已生成"
+    if not test.empty and {"方案", "Sharpe", "最大回撤", "Beta"}.issubset(test.columns):
+        raw = test[test["方案"] == "多头原始"]
+        h08 = test[test["方案"] == "固定0.8对冲"]
+        if not raw.empty and not h08.empty:
+            summary = (
+                f"测试集：多头原始 Sharpe {raw.iloc[0]['Sharpe']}，"
+                f"固定0.8对冲 Sharpe {h08.iloc[0]['Sharpe']}"
+            )
+
+    img = image_data_uri(hedged_dir / "hedged_long_result.png")
+    image_html = f'<img src="{img}" alt="ETF 多头+指数对冲">' if img else ""
+    body = (
+        "<p>该章节保留 MSGNet 多头 ETF 组合，使用 ETF20 等权市场作为第一版对冲基准。"
+        "核心目的是检验多头收益中 Alpha 与市场 Beta 的比例，而不是单纯追求更高收益。</p>"
+        f"{html_table(perf, max_rows=14)}"
+        f"{image_html}"
+        "<p>若较高对冲比例或滚动 Beta 对冲后收益明显下降，说明多头组合中存在较大市场方向暴露；"
+        "若回撤显著下降且 Sharpe 仍可接受，则该方向适合作为增强型多头策略继续优化。</p>"
+    )
+    return body, summary
+
+
 def factor_descriptions() -> str:
     items = [
         ("amplitude", "主周期振幅", "衡量 ETF 收益序列在主导周期上的摆动强度。数值越高，通常代表更强的周期波动，也更容易混入高 Beta 或强趋势暴露。", "amplitude_i = |FFT_i(f*)|"),
@@ -306,6 +340,7 @@ def render_report(run_dir: Path) -> str:
     generated_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     wf_title, wf_text = wf_conclusion(wf_report)
     rolling_html, _ = rolling_section(run_dir)
+    hedged_html, hedged_summary = hedged_long_section(run_dir)
 
     backtest_img = image_data_uri(backtest_dir / "backtest_result.png")
     wf_img = image_data_uri(walk_dir / "wf_result.png")
@@ -316,6 +351,7 @@ def render_report(run_dir: Path) -> str:
         metric_card("IC 通过因子", str(len(ic_passed)), f"|IC均值|>={IC_THRESHOLD}, |IC_IR|>={IC_IR_THRESHOLD}"),
         metric_card("显著因子收益", str(len(factor_sig)), f"|NW_t|>={NW_T_THRESHOLD}, |IR|>={FACTOR_IR_THRESHOLD}"),
         metric_card("Walk-Forward", wf_title, "静态因子窗口压力测试"),
+        metric_card("多头对冲", hedged_summary, "ETF20等权市场基准"),
     ]
 
     conclusion = (
@@ -426,6 +462,11 @@ def render_report(run_dir: Path) -> str:
   <section>
     <h2>滚动重训练验证</h2>
     {rolling_html}
+  </section>
+
+  <section class="page-break">
+    <h2>ETF 多头 + 指数对冲</h2>
+    {hedged_html}
   </section>
 
   <section>

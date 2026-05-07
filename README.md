@@ -12,6 +12,7 @@
 - 低振幅、较高周期稳定性一类信号对多头 ETF 选择有效。
 - ETF20 多空组合结构不可行，主要问题来自空头侧高 Beta 暴露。
 - 静态 Walk-Forward 与滚动重训练 Walk-Forward 的结论一致。
+- 当前阶段已进入基于已挖掘因子的 ETF 选择/增强配置策略构建。
 
 ## 研究流程
 
@@ -164,7 +165,8 @@ composite = -amplitude_neutralized * w_amp + period_stability * w_ps
 1. MSGNet 能提取 ETF 关系结构，图结构因子和周期因子均有可验证信息量。
 2. 低振幅、高周期稳定性一类信号适合做多头 ETF 选择。
 3. ETF20 多空组合不适合直接交易，空头侧天然集中在高 Beta ETF。
-4. 后续更合理方向是多头 ETF 组合 + 指数对冲，或扩展到 CSI300 个股池做更稳定的截面中性化。
+4. ETF 多头 + 指数/市场对冲在本项目中定位为 Beta 归因验证工具，用于判断多头收益中 Alpha 与市场 Beta 的比例，不作为默认最终策略方向。
+5. 后续主线是基于已验证因子构建更稳健的 ETF 选择/增强配置策略；扩展到 CSI300 个股池是第二阶段研究方向。
 
 ## 运行方法
 
@@ -186,6 +188,7 @@ python .\src\factor_return_test.py
 python .\src\factor_neutralize.py
 python .\src\backtest.py
 python .\src\walk_forward.py
+python .\src\hedged_long_backtest.py
 python .\src\report.py
 ```
 
@@ -199,7 +202,7 @@ python .\src\report.py
 报告生成：
 
 - `report.py` 会读取最新 `facts/runs/<run_id>/`，自动生成 HTML 和 PDF 分析报告。
-- 报告包含研究结论文本、因子文字说明、少量公式、IC 检验、Beta 控制单因子收益检验、静态回测和 Walk-Forward 结果。
+- 报告包含研究结论文本、因子文字说明、少量公式、IC 检验、Beta 控制单因子收益检验、静态回测、Walk-Forward 和 ETF 多头 Beta 归因结果。
 - 如本次 run 没有 `rolling_update/` 产物，报告会保留该章节并注明缺失。
 - PDF 导出调用本机 Chrome/Edge headless；在受限沙箱中运行时，可能需要允许 Chrome 子进程执行。
 
@@ -236,6 +239,7 @@ MSGNet因子挖掘/
 │   ├── factor_neutralize.py    # Beta 中性化
 │   ├── backtest.py             # 静态组合回测
 │   ├── walk_forward.py         # 静态 Walk-Forward
+│   ├── hedged_long_backtest.py # ETF 多头 Beta 归因验证
 │   ├── rolling_update.py       # 滚动重训练 Walk-Forward
 │   ├── report.py               # 自动生成 HTML/PDF 分析报告
 │   ├── run_config.py           # 统一结果目录管理
