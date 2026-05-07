@@ -1,0 +1,135 @@
+推荐文献（9篇）
+生成日期：2026-04-20
+背景：MSGNet因子挖掘项目，基于当前进度（csi300_1训练完成，MSE≈1.0，amplitude反向因子，多空回测年化-33%）
+
+================================================================================
+
+【问题一：因子提取质量差（图结构没学好）】
+
+1. FactorVAE: A Probabilistic Dynamic Factor Model Based on Variational Autoencoder
+   for Predicting Cross-Sectional Stock Returns
+   - 发表：AAAI 2022
+   - 链接：https://ojs.aaai.org/index.php/AAAI/article/view/20369
+   - PDF：https://cdn.aaai.org/ojs/20369/20369-13-24382-1-2-20220628.pdf
+   - 为什么读：用 VAE 的 prior-posterior 学习框架，让隐空间每个维度对应一个可解释因子，
+     同时输出预测均值和方差（天然带不确定性估计）。对应改进方向：把 MSGNet encoder
+     输出接进 VAE 因子头，替代现有 factor_extract.py 的直接取 embedding 方式。
+
+2. GraphVAE: Unveiling Dynamic Stock Relationships with Variational Autoencoder-based
+   Factor Modeling
+   - 发表：CIKM 2024
+   - 链接：https://dl.acm.org/doi/10.1145/3627673.3679935
+   - 为什么读：FactorVAE + 动态图结构，与现有工作（MSGNet图结构 + 因子提取 + 截面预测）
+     几乎完全重叠，可直接作为比较基线和改进蓝图。
+
+================================================================================
+
+【问题二：MSE≈1.0，模型预测力弱】
+
+3. Reversible Instance Normalization for Accurate Time-Series Forecasting
+   against Distribution Shift (RevIN)
+   - 发表：ICLR 2022
+   - 链接：https://openreview.net/forum?id=cGDAkQo1C0p
+   - 官网：https://seharanul17.github.io/RevIN/
+   - GitHub：https://github.com/ts-kim/RevIN
+   - 为什么读：截面z-score只解决截面方向的分布差异，没有处理时间方向的分布漂移
+     （均值和方差随时间变化）。RevIN 在 input 做 instance norm、在 output 层逆向还原，
+     可直接插入 MSGNet 架构。这可能是 MSE≈1.0 的部分原因。
+
+================================================================================
+
+【问题三：单一因子回测亏损，需要因子组合】
+
+4. AlphaForge: A Framework to Mine and Dynamically Combine Formulaic Alpha Factors
+   - 发表：AAAI 2025
+   - 链接：https://arxiv.org/abs/2406.18394
+   - 为什么读：amplitude（反向）和 pagerank_L1_S1（正向）相关性仅0.08，基本正交，
+     正好是因子组合的典型场景。AlphaForge 用神经网络动态调整每个因子的权重，
+     处理不同市场状态下因子有效性的切换。可在 factor_validate.py 下游加动态组合层。
+
+================================================================================
+
+【问题四：图结构学习本身的架构局限】
+
+5. MASTER: Market-Guided Stock Transformer for Stock Price Forecasting
+   - 发表：AAAI 2024
+   - 链接：https://arxiv.org/abs/2312.15235
+   - GitHub：https://github.com/SJTU-DMTai/MASTER
+   - 为什么读：GraphBlock kernel=(4,1) 感受野极小，根本原因是强行把 N=293 只股票的
+     相关性塞进二维卷积（d_model=296 约束导致）。MASTER 用 Transformer attention
+     建模跨股票相关性（避开Conv2d的N约束），并引入市场指数作为全局节点引导特征选择。
+     有代码，可直接跑对比实验。
+
+================================================================================
+
+【阅读顺序建议（第一批）】
+GraphVAE（看整体框架）
+  → FactorVAE（看因子提取细节）
+  → RevIN（快，10分钟，看能否直接加进去）
+  → MASTER（看替代架构）
+  → AlphaForge（看因子组合方案）
+
+================================================================================
+================================================================================
+
+【第二批：完整流程展示（挖因子 → 测IC → 分组分析 → 多空回测）】
+
+================================================================================
+
+【流程总览参考】
+
+6. From Factor Models to Deep Learning: Machine Learning in Reshaping Empirical
+   Asset Pricing
+   - 发表：arXiv 2024（综述）
+   - 链接：https://arxiv.org/abs/2403.06779
+   - 为什么读：从 Fama-French 传统因子模型到深度学习因子，系统梳理整条方法论演进。
+     你现在的 amplitude 因子失效、Beta暴露问题，在这篇里有完整的理论解释
+     （为什么需要风险中性化、IC门槛的经济含义）。适合作为背景知识和方法论地图来读。
+
+================================================================================
+
+【端到端完整流程】
+
+7. E2EAI: End-to-End Deep Learning Framework for Active Investing
+   - 发表：ICAIF 2023（ACM AI in Finance）
+   - 链接：https://arxiv.org/abs/2305.16364
+   - ACM：https://dl.acm.org/doi/10.1145/3604237.3626848
+   - 为什么读：覆盖"因子筛选 → 因子组合 → 股票评分 → 组合构建"完整端到端流程，
+     是目前最完整的 pipeline 论文之一。你现有流程缺少"因子筛选"和"组合权重"两步，
+     这篇直接对应这两个空缺，读完可以补全流程设计。
+
+================================================================================
+
+【图结构因子 + 完整评测标准】
+
+8. FactorGCL: A Hypergraph-Based Factor Model with Temporal Residual Contrastive
+   Learning for Stock Returns Prediction
+   - 发表：AAAI 2025
+   - 链接：https://arxiv.org/abs/2502.05218
+   - AAAI：https://ojs.aaai.org/index.php/AAAI/article/view/31993
+   - 为什么读：架构上与你高度相似（图结构 + 因子分解），但把收益拆为
+     prior beta / hidden beta / individual alpha 三层残差结构。
+     他们的评测流程（IC表 + 分组收益图 + 年化Sharpe）可直接作为
+     你 factor_validate.py 的对标模板。
+
+================================================================================
+
+【分布漂移 + 完整流程】
+
+9. DoubleAdapt: A Meta-learning Approach to Incremental Learning for Stock Trend
+   Forecasting
+   - 发表：KDD 2023
+   - 链接：https://arxiv.org/abs/2306.09862
+   - ACM：https://dl.acm.org/doi/10.1145/3580305.3599315
+   - GitHub：https://github.com/SJTU-DMTai/DoubleAdapt
+   - 为什么读：MSE≈1.0 的重要原因之一是模型训练在2022年数据上，测试时市场分布已漂移。
+     DoubleAdapt 用双元学习器（feature adapter + model adapter）动态适配分布变化，
+     评测流程里含完整的 IC随时间变化折线图，正好对应你需要的"因子稳定性"分析维度。
+
+================================================================================
+
+【第二批阅读顺序建议】
+综述 2403.06779（建立方法论框架）
+  → E2EAI（看完整流程设计）
+  → FactorGCL（对标你的架构和评测标准）
+  → DoubleAdapt（解决分布漂移问题）

@@ -1,0 +1,39 @@
+# Runtime data and generated results
+data/
+facts/
+
+# Model/runtime outputs
+checkpoints/
+test_results/
+results/
+*.pth
+*.pt
+*.ckpt
+result.txt
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local editor/agent settings
+.vscode/
+.claude/
+
+# Environments
+.venv/
+venv/
+env/
+.env
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# Local/reference materials not needed for source release
+单因子显著性检验.jpeg
+文献/*.pdf
